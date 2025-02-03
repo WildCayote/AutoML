@@ -8,7 +8,7 @@ async function bootstrap() {
   app.useGlobalPipes( new ValidationPipe({whitelist: true}))
 
   app.enableCors({
-    origin: false,  // Completely disables cross-origin requests
+    origin: true, // Allows all cross-origin requests
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
