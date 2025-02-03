@@ -9,6 +9,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: false,  // Completely disables cross-origin requests
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
 
   const config = new DocumentBuilder()
