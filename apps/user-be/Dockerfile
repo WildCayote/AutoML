@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # COPY package*.json ./
-COPY user-be/package*.json ./
+COPY package*.json ./
 
 # Install app dependencies
 RUN npm install
@@ -21,5 +21,5 @@ RUN npm run build
 EXPOSE 3001
 
 # Start the server using the production build
-# CMD ["npm", "run", "start:prod"]
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run start:prod"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run start:dev"]
+
