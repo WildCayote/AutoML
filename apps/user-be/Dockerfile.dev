@@ -5,9 +5,12 @@ FROM node:22
 WORKDIR /usr/src/app
 
 # Copy package files and install dependencies
-# COPY package*.json ./
-COPY user-be/package*.json ./
+COPY package*.json ./
+# COPY user-be/package*.json ./
 RUN npm install
+
+# Install nodemon globally
+RUN npm install -g nodemon
 
 # Copy the rest of the source code
 COPY . .
@@ -20,5 +23,6 @@ EXPOSE 3001
 # Use a development command (assumes you have a script like "start:dev")
 # CMD ["npm", "run", "start:dev"]
 # Add Prisma migrations before starting the app
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run start:dev"]
+# CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run start:dev"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && nodemon --legacy-watch -e js,ts,json --exec 'npm run start:dev'"]
 

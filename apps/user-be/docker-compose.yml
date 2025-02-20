@@ -37,8 +37,9 @@ services:
       - 3001:3001
     volumes:
       - .:/usr/src/app
-      # - node_modules:/usr/src/app/node_modules
       - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
     env_file:
       - .env
     depends_on:
