@@ -1,2 +1,11 @@
 pika
 jsonschema
+git+https://git@github.com/WildCayote/SeaweedS3Client.git
+pandas
+langchain
+langchain-openai
+langchain-community
+langgraph
+dotenv
+fastapi
+uvicorn
