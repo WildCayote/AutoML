@@ -4,7 +4,7 @@ import { useProjects } from "@/lib/projects-context"
 import { BarChart2, Link2Icon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { use,useEffect } from "react"
+import { use,useEffect, useState } from "react"
 import { ProjectHeader } from "@/components/dashboard/project-header"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { createProject, fetchProjects } from "@/lib/features/project/projectActions"
@@ -38,10 +38,39 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
             })
     }
 }, [access_token, dispatch, router, authError]);
+const [htmlContent, setHtmlContent] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHtml = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:4000/');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const html = await response.text();
+        setHtmlContent(html);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHtml();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
   if (!project) {
     return <div className="p-8">Project not found</div>
   }
 
+  // load an html page from an api endpoint
+  
   return (
     <>
       <ProjectHeader projectId={project.id} />
@@ -51,26 +80,12 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
             <BarChart2 className="h-5 w-5 text-blue-600 mr-2" />
             <h1 className="text-2xl font-bold">Exploratory Data Analysis</h1>
           </div>
-          <Button size="sm">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Analysis
-          </Button>
+          
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Define Dataset Relationships</CardTitle>
-            <CardDescription>Connect your datasets to establish relationships between them</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-              <Link2Icon className="h-10 w-10 text-gray-300 mb-3" />
-              <p className="text-sm text-gray-500 text-center mb-4">No datasets available to create relationships</p>
-              <Button variant="outline" size="sm">
-                Add Dataset
-              </Button>
-            </div>
-          </CardContent>
+        <Card className="mb-8" dangerouslySetInnerHTML={{ __html: htmlContent }}>
+          
+          
         </Card>
       </div>
     </>
