@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { Upload, Edit, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, Edit, Check, X, ChevronLeft, ChevronRight, FileText, BookOpen } from 'lucide-react';
 type DataRow = Record<string, any>;
 type FileType = 'csv' | 'json' | 'excel' | 'unknown';
 type ColumnMeta = { description: string; isSelected: boolean };
@@ -20,6 +20,8 @@ export default function DataUploader() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const pageOptions = [5, 10, 20, 50, 100];
+  const [datasetDescription, setDatasetDescription] = useState('');
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   const handleSubmit = () => {}
 
@@ -177,7 +179,8 @@ export default function DataUploader() {
         </div>
       )}
 
-      {data.length > 0 && (
+      {data.length > 0 && 
+      (
         <div className="space-y-6">
           {/* File Info and Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gray-50 rounded-lg">
@@ -208,6 +211,101 @@ export default function DataUploader() {
               </div>
             </div>
           </div>
+          
+          {data.length > 0 && (
+  <div className="space-y-6">
+    {/* Dataset Description Card */}
+    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-blue-500" />
+            Dataset Overview
+          </h3>
+          
+          {isEditingDescription ? (
+            <div className="mt-3 space-y-3">
+              <textarea
+                value={tempDescription}
+                onChange={(e) => setTempDescription(e.target.value)}
+                className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Describe your dataset (purpose, source, important notes)..."
+                rows={4}
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditingDescription(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setDatasetDescription(tempDescription);
+                    setIsEditingDescription(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!tempDescription.trim()}
+                >
+                  Save Description
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div 
+              onClick={() => {
+                setTempDescription(datasetDescription);
+                setIsEditingDescription(true);
+              }}
+              className={`mt-3 p-4 rounded-lg border-2 border-dashed cursor-text ${
+                datasetDescription 
+                  ? "border-transparent bg-gray-50 hover:bg-gray-100" 
+                  : "border-gray-300 hover:border-blue-300 bg-gray-50"
+              } transition-colors`}
+            >
+              {datasetDescription ? (
+                <div className="prose prose-sm max-w-none text-gray-700">
+                  {datasetDescription.split('\n').map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+                  <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                    <Edit className="w-3 h-3" />
+                    Click to edit
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <FileText className="w-5 h-5 text-gray-400" />
+                    <p className="font-medium">Add dataset description</p>
+                    <p className="text-xs">Click here to describe your dataset</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        
+        {!isEditingDescription && datasetDescription && (
+          <button
+            onClick={() => {
+              setTempDescription(datasetDescription);
+              setIsEditingDescription(true);
+            }}
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            aria-label="Edit description"
+          >
+            <Edit className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+    )}
+
+    
 
           {/* Data Table */}
           <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
