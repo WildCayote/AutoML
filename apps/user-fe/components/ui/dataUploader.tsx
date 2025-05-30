@@ -21,6 +21,8 @@ export default function DataUploader() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const pageOptions = [5, 10, 20, 50, 100];
 
+  const handleSubmit = () => {}
+
   const parseCSV = useCallback((file: File) => {
     Papa.parse(file, {
       header: true,
@@ -351,6 +353,22 @@ export default function DataUploader() {
               </button>
             </div>
           </div>
+          {data.length > 0 && (
+  <div className="mt-6 flex justify-end">
+    <button
+      onClick={handleSubmit}
+      // disabled={isSubmitting}
+      className={`px-6 py-2 rounded-lg font-medium ${
+           'bg-green-600 text-white hover:bg-green-700'
+      } transition-colors flex items-center space-x-2`}
+    >
+     
+      Submit Data
+    </button>
+  </div>
+)}
+
+
 
           {/* Metadata Summary */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
