@@ -53,7 +53,7 @@ export default function DataPage({ params }: { params: Promise<PageParams> }) {
             <Database className="h-5 w-5 text-blue-600 mr-2" />
             <h1 className="text-2xl font-bold">Data</h1>
           </div>
-          <div className="flex space-x-2">
+          {/* <div className="flex space-x-2">
             <Button variant="outline" size="sm">
               <UploadIcon className="h-4 w-4 mr-2" />
               Upload Dataset
@@ -62,7 +62,7 @@ export default function DataPage({ params }: { params: Promise<PageParams> }) {
               <PlusIcon className="h-4 w-4 mr-2" />
               Connect Data Source
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <div>
