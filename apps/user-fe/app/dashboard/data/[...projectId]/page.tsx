@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { createProject, fetchProjects } from "@/lib/features/project/projectActions"
 import { refresh } from "@/lib/features/auth/authActions"
 import {useRouter} from "next/navigation"
+import DataUploader from "@/components/ui/dataUploader"
 
 type PageParams = {
   projectId: string[]
@@ -64,9 +65,9 @@ export default function DataPage({ params }: { params: Promise<PageParams> }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div>
           <Card>
-            <CardHeader className="pb-2">
+            {/* <CardHeader className="pb-2">
               <CardTitle className="text-lg">No Datasets</CardTitle>
               <CardDescription>Upload or connect a dataset to get started</CardDescription>
             </CardHeader>
@@ -80,7 +81,8 @@ export default function DataPage({ params }: { params: Promise<PageParams> }) {
                   Browse Files
                 </Button>
               </div>
-            </CardContent>
+            </CardContent> */}
+            <DataUploader projectId={project.id} />
           </Card>
         </div>
       </div>

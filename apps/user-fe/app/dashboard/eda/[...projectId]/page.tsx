@@ -38,7 +38,8 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
             })
     }
 }, [access_token, dispatch, router, authError]);
-const [htmlContent, setHtmlContent] = useState<string>('');
+
+  const [htmlContent, setHtmlContent] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
