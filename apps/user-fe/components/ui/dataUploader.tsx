@@ -1,16 +1,29 @@
 // components/ui/dataUploader.tsx
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, forwardRef,
+  useImperativeHandle, } from 'react';
+import { createDataset } from '@/lib/features/data/dataActions';
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { Upload, Edit, Check, X, ChevronLeft, ChevronRight, FileText, BookOpen } from 'lucide-react';
+import { clearLocalFile,setLocalFile,setDeleted } from '@/lib/features/data/datasetSlice';
 type DataRow = Record<string, any>;
 type FileType = 'csv' | 'json' | 'excel' | 'unknown';
 type ColumnMeta = { description: string; isSelected: boolean };
 
-export default function DataUploader() {
+export interface DataUploaderProps {
+  projectId: string;
+}
+export interface DataUploaderRef {
+  handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+ function DataUploader({ projectId}: DataUploaderProps, ref: React.Ref<DataUploaderRef>) {
+  //TODO:group together things related to dataset make code cleaner
   const [data, setData] = useState<DataRow[]>([]);
   const [fileName, setFileName] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<FileType>('unknown');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +35,20 @@ export default function DataUploader() {
   const pageOptions = [5, 10, 20, 50, 100];
   const [datasetDescription, setDatasetDescription] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const dispatch = useAppDispatch();
+  const { datasets,deleted, status,error:datasetsError,hasLocalFile} = useAppSelector((state) => state.data)
 
-  const handleSubmit = () => {}
+  const handleSubmit = () => {
+    if (!file) return;
+    dispatch(createDataset({
+      name: fileName,
+      description: datasetDescription,
+      projectId: projectId,
+      format: fileType.toUpperCase(),
+      start_profiling: false,
+      file: file,
+    }));
+  };
 
   const parseCSV = useCallback((file: File) => {
     Papa.parse(file, {
@@ -40,8 +65,13 @@ export default function DataUploader() {
         }
         setIsLoading(false);
         setCurrentPage(1);
+        setFileName(file.name);
+        setFile(file)
+        dispatch(setLocalFile(true));
+        
+
       },
-      error: (error) => { setError(`Error parsing CSV: ${error.message}`); setIsLoading(false); },
+      error: (error) => { setError(`Error parsing CSV: ${error.message}`); setIsLoading(false);  },
     });
   }, [columnMetadata]);
 
@@ -58,10 +88,11 @@ export default function DataUploader() {
               initialMetadata[key] = { description: columnMetadata[key]?.description || '', isSelected: columnMetadata[key]?.isSelected || false };
             });
             setColumnMetadata(initialMetadata);
+           
           }
         } else { setError('JSON file should contain an array of objects'); }
       } catch (err) { setError(`Error parsing JSON: ${err instanceof Error ? err.message : String(err)}`); }
-      finally { setIsLoading(false); setCurrentPage(1); }
+      finally { setIsLoading(false); setCurrentPage(1);  setFileName(file.name); setFile(file); dispatch(setLocalFile(true));  }
     };
     reader.readAsText(file);
   }, [columnMetadata]);
@@ -82,26 +113,31 @@ export default function DataUploader() {
             initialMetadata[key] = { description: columnMetadata[key]?.description || '', isSelected: columnMetadata[key]?.isSelected || false };
           });
           setColumnMetadata(initialMetadata);
+          
         }
       } catch (err) { setError(`Error parsing Excel file: ${err instanceof Error ? err.message : String(err)}`); }
-      finally { setIsLoading(false); setCurrentPage(1); }
+      finally {setFileName(file.name); setFile(file);  dispatch(setLocalFile(true)); setIsLoading(false); setCurrentPage(1);}
     };
     reader.readAsArrayBuffer(file);
   }, [columnMetadata]);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setDeleted(false));
+    console.log("handleFileUpload triggered"); 
     setError(null);
     const file = event.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
     setIsLoading(true);
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     if (fileExtension === 'csv') { setFileType('csv'); parseCSV(file); }
     else if (fileExtension === 'json') { setFileType('json'); parseJSON(file); }
     else if (['xlsx', 'xls'].includes(fileExtension || '')) { setFileType('excel'); parseExcel(file); }
-    else { setError('Unsupported file type. Please upload CSV, JSON, or Excel file.'); setIsLoading(false); }
+    else { setError('Unsupported file type. Please upload CSV, JSON, or Excel file.'); setIsLoading(false);setFile(null) }
   }, [parseCSV, parseJSON, parseExcel]);
 
+  useImperativeHandle(ref, () => ({
+    handleFileUpload,
+  }));
   const handleColumnClick = useCallback((columnName: string) => {
     setEditingColumn(columnName);
     setTempDescription(columnMetadata[columnName]?.description || '');
@@ -134,14 +170,16 @@ export default function DataUploader() {
   useEffect(() => { if (data.length > 0 && currentPage > totalPages) setCurrentPage(totalPages); }, [data.length, currentPage, totalPages]);
 
    return (
-    <div className="w-full max-w-6xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-100">
-      <div className="mb-8">
+    <div className="w-full p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+      {/* <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">{!data.length? "Data Explorer": "Data Preview"}</h1>
         <p className="text-gray-500">Upload and analyze your structured data files</p>
-      </div>
+      </div> */}
 
       {/* File Upload Card */}
-      {!data.length &&
+      
+
+      {(!data.length||deleted==true)&&
       (<div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-200 mb-8 transition-all hover:border-blue-400">
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="p-4 bg-blue-100 rounded-full">
@@ -160,7 +198,7 @@ export default function DataUploader() {
         </div>
       </div>)}
 
-      {isLoading && (
+      {(isLoading|| status=="loading") && (
         <div className="flex flex-col items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-gray-600">Processing your file...</p>
@@ -179,16 +217,35 @@ export default function DataUploader() {
         </div>
       )}
 
-      {data.length > 0 && 
+      {(data.length > 0 && deleted==false)&&//TODO:mocking the integration modify after backend is fixed
       (
         <div className="space-y-6">
+          
           {/* File Info and Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">
                 <span className="font-medium text-gray-500">File:</span> {fileName}
-                <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                  {fileType.toUpperCase()}
+                <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                  status === 'loading'
+                    ? 'bg-yellow-100 text-black-800'
+                    : status === 'succeeded'
+                    ? 'bg-green-100 text-black-800'
+                    : status === 'failed'
+                    ? 'bg-red-100 text-black-800'
+                    : file !== null
+                    ? 'bg-blue-100 text-black-800'
+                    : 'bg-blue-100 text-black-800'
+                }`}>
+                  {status === 'loading'
+                    ? 'Uploading...'
+                    : status === 'succeeded'
+                    ? 'File Uploaded'
+                    : status === 'failed'
+                    ? 'Failed to upload'
+                    : file !== null
+                    ? 'File Chosen'
+                    : fileType.toUpperCase()}
                 </span>
               </h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -455,13 +512,21 @@ export default function DataUploader() {
   <div className="mt-6 flex justify-end">
     <button
       onClick={handleSubmit}
-      // disabled={isSubmitting}
+      disabled={status === 'loading'}
       className={`px-6 py-2 rounded-lg font-medium ${
-           'bg-green-600 text-white hover:bg-green-700'
+        status === 'loading'
+          ? 'bg-gray-400 cursor-not-allowed' 
+          : 'bg-green-600 text-white hover:bg-green-700'
       } transition-colors flex items-center space-x-2`}
     >
-     
-      Submit Data
+      {status === 'loading' ? (
+        <>
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+          <span>Submitting...</span>
+        </>
+      ) : (
+        'Submit Data'
+      )}
     </button>
   </div>
 )}
@@ -502,3 +567,6 @@ export default function DataUploader() {
     </div>
   );
 }
+const DataUploaderr = forwardRef(DataUploader);
+export default DataUploaderr;
+
