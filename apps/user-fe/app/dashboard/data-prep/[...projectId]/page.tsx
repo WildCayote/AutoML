@@ -26,7 +26,7 @@ export default function DataPrepPage({ params }: { params: Promise<PageParams> }
   const project = projects.find((p) => p.id === unwrappedParams.projectId.join("/"));
   const projectId = unwrappedParams.projectId.join("/");
   const dispatch = useAppDispatch();
-  
+  console.log(projectId)
   const [datasetId, setDatasetId] = useState<string | null>(null);
 
   const handleStart = () => {
@@ -77,35 +77,23 @@ export default function DataPrepPage({ params }: { params: Promise<PageParams> }
 
         <Tabs defaultValue="cleaning">
           <TabsList className="mb-6">
-            <TabsTrigger value="cleaning">Data Cleaning</TabsTrigger>
-            <TabsTrigger value="transformation">Transformations</TabsTrigger>
-            <TabsTrigger value="feature-engineering">Feature Engineering</TabsTrigger>
+            <TabsTrigger value="cleaning">Feature Engineering</TabsTrigger>
+            <TabsTrigger value="transformation">Feature Selection</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cleaning">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FeatureEngineeringCard datasetId={datasetId} />
-              <FeatureSelectionCard datasetId={datasetId} />
+            <div className="">
+<FeatureEngineeringCard projectId={projectId} />
             </div>
           </TabsContent>
 
           <TabsContent value="transformation">
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Transformations</CardTitle>
-                <CardDescription>Apply transformations to your data</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-                  <FilterX className="h-10 w-10 text-gray-300 mb-3" />
-                  <p className="text-sm text-gray-500 text-center mb-4">No datasets available for transformation</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="feature-engineering">
-            <FeatureEngineeringCard datasetId={datasetId} />
+             <div className="">
+                            
+                            <FeatureSelectionCard projectId={projectId}  />
+            
+            </div>
+            
           </TabsContent>
         </Tabs>
       </div>

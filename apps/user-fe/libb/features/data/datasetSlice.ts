@@ -280,13 +280,13 @@ const datasetSlice = createSlice({
 .addCase(fetchFeatureSelectionResults.fulfilled, (state, action) => {
   state.featureSelStatus = "succeeded";
 
-  const { datasetId, vizUrl } = action.payload;
+  const { datasetId, featVizUrl } = action.payload;
 
   // Find the matching dataset
   const ds = state.datasets.find(d => d.id === datasetId);
 
   if (ds) {
-    ds.featureEngArtifacts = vizUrl;        // ✅ safe draft mutation
+    ds.featureEngArtifacts = featVizUrl;        // ✅ safe draft mutation
   } else {
     // If it isn't in the array yet, push a stub so UI still works
     state.datasets.push({

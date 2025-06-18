@@ -4,7 +4,7 @@ import axios from "axios";
 import { Dataset, EDAReport } from "./datasetSlice";
 // import { FaLessThan } from "react-icons/fa";
 
-const backendURL = "http://localhost:3001";
+const backendURL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001";
 export const createDataset = createAppAsyncThunk<
   Dataset,
   { 
@@ -406,7 +406,7 @@ export const fetchFeatureSelectionResults = createAppAsyncThunk<
       );
       console.log("fetch feature selection log", response)
       // const { data } = await axios.get(`/datasets/${datasetId}/feature-engineering`);
-      return { datasetId, vizUrl: response.data.FeaturesVizFile };
+      return { datasetId, featVizUrl: response.data.FeaturesVizFile };
       // return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
