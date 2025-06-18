@@ -1,32 +1,37 @@
-// hooks/useFeatureEngineering.ts
+"use client"
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/libb/hooks";
-import { startFeatureEngineering, fetchFeatureEngineeringResults } from '@/libb/features/data/dataActions';;
+import { startFeatureEngineering, fetchFeatureEngineeringResults } from '@/libb/features/data/dataActions';
 
 export function useFeatureEngineering(datasetId: string) {
   const dispatch = useAppDispatch();
-  const { datasets, status } = useAppSelector((state) => state.data);
-  console.log("Hook dataset", datasets)
+  const { datasets, featureEngStatus } = useAppSelector((state) => state.data);
   const [timeoutReached, setTimeoutReached] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const dataset = datasets.length > 0 ? datasets[0] : null;
+  const dataset = datasets.find(d => d.id === datasetId) || null;
   const featureEngDone = Boolean(dataset?.featureEngArtifacts);
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    pollIntervalRef.current = null;
+    timeoutRef.current = null;
   }, []);
 
   const startPolling = useCallback(() => {
-    stopPolling(); // clear any existing polling
+    stopPolling();
 
+    // 3 minutes timeout
     timeoutRef.current = setTimeout(() => {
       setTimeoutReached(true);
       stopPolling();
-    }, 180000); // 3 minutes
+    }, 180000);
 
+    // Immediate fetch and then every 10 seconds
+    dispatch(fetchFeatureEngineeringResults(datasetId));
     pollIntervalRef.current = setInterval(() => {
       dispatch(fetchFeatureEngineeringResults(datasetId));
     }, 10000);
@@ -35,11 +40,13 @@ export function useFeatureEngineering(datasetId: string) {
   const startFeatureEng = useCallback(async () => {
     setTimeoutReached(false);
     await dispatch(startFeatureEngineering(datasetId));
-    console.log("this is from use feature engineering hook", dataset)
-    startPolling();
-  }, [datasetId, dispatch, startPolling]);
+  }, [datasetId, dispatch]);
 
-  // 💡 Automatically stop polling if results are found
+  const fetchEngResults = useCallback(() => {
+    setTimeoutReached(false);
+    startPolling();
+  }, [startPolling]);
+
   useEffect(() => {
     if (featureEngDone) {
       stopPolling();
@@ -52,11 +59,12 @@ export function useFeatureEngineering(datasetId: string) {
 
   return {
     results: dataset?.featureEngArtifacts,
-    isLoading: status === "loading",
+    isLoading: featureEngStatus === "loading",
     error: timeoutReached 
       ? 'Feature engineering timed out after 3 minutes' 
-      : status === 'failed' ? 'Failed to fetch results' : null,
+      : featureEngStatus === 'failed' ? 'Failed to fetch results' : null,
     startFeatureEng,
+    fetchEngResults,
     stopPolling
   };
 }

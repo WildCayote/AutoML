@@ -47,12 +47,6 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
     }
   }, [projectError, dispatch]);
 
-  useEffect(()=> {
-    if (!isLoading) {
-      stopPolling()
-    } 
-  }, [isLoading])
-
   if (!project) {
     return <div className="p-8">Project not found</div>;
   }

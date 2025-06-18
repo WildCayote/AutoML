@@ -30,17 +30,21 @@ export interface Dataset {
 interface DatasetState {
   datasets: Dataset[];
   status: "idle" | "loading" | "succeeded" | "failed";
+  featureEngStatus: "idle" | "loading" | "succeeded" | "failed";
+  featureSelStatus: "idle" | "loading" | "succeeded" | "failed";
   error: string | null | string[];
-  hasLocalFile:boolean;
-  deleted:boolean
+  hasLocalFile: boolean;
+  deleted: boolean;
 }
 
 const initialState: DatasetState = {
   datasets: [],
   status: "idle",
+  featureEngStatus: "idle",
+  featureSelStatus: "idle",
   error: null,
-  hasLocalFile:false,
-  deleted:false
+  hasLocalFile: false,
+  deleted: false
 };
 
 
@@ -210,22 +214,22 @@ const datasetSlice = createSlice({
   state.error = action.payload as string;
 })
  .addCase(startFeatureEngineering.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-  })
-  .addCase(startFeatureEngineering.fulfilled, (state) => {
-        state.status = "succeeded";
-  })
-  .addCase(startFeatureEngineering.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string | string[];
-  })
-  .addCase(fetchFeatureEngineeringResults.pending, (state) => {
-  state.status = "loading";
+  state.featureEngStatus = "loading";
+  state.error = null;
+})
+.addCase(startFeatureEngineering.fulfilled, (state) => {
+  state.featureEngStatus = "succeeded";
+})
+.addCase(startFeatureEngineering.rejected, (state, action) => {
+  state.featureEngStatus = "failed";
+  state.error = action.payload as string | string[];
+})
+.addCase(fetchFeatureEngineeringResults.pending, (state) => {
+  state.featureEngStatus = "loading";
   state.error = null;
 })
 .addCase(fetchFeatureEngineeringResults.fulfilled, (state, action) => {
-  state.status = "succeeded";
+  state.featureEngStatus = "succeeded";
 
   const { datasetId, vizUrl } = action.payload;
 
@@ -254,27 +258,27 @@ const datasetSlice = createSlice({
   }
 })
 .addCase(fetchFeatureEngineeringResults.rejected, (state, action) => {
-  state.status = "failed";
+  state.featureEngStatus = "failed";
   state.error = action.payload as string;
 })
- 
+
 .addCase(startFeatureSelection.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-  })
-  .addCase(startFeatureSelection.fulfilled, (state) => {
-        state.status = "succeeded";
-  })
-  .addCase(startFeatureSelection.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string | string[];
-  })
-  .addCase(fetchFeatureSelectionResults.pending, (state) => {
-  state.status = "loading";
+  state.featureSelStatus = "loading";
+  state.error = null;
+})
+.addCase(startFeatureSelection.fulfilled, (state) => {
+  state.featureSelStatus = "succeeded";
+})
+.addCase(startFeatureSelection.rejected, (state, action) => {
+  state.featureSelStatus = "failed";
+  state.error = action.payload as string | string[];
+})
+.addCase(fetchFeatureSelectionResults.pending, (state) => {
+  state.featureSelStatus = "loading";
   state.error = null;
 })
 .addCase(fetchFeatureSelectionResults.fulfilled, (state, action) => {
-  state.status = "succeeded";
+  state.featureSelStatus = "succeeded";
 
   const { datasetId, vizUrl } = action.payload;
 
@@ -303,8 +307,9 @@ const datasetSlice = createSlice({
   }
 })
 .addCase(fetchFeatureSelectionResults.rejected, (state, action) => {
-  state.status = "failed";
+  state.featureSelStatus = "failed";
   state.error = action.payload as string;
+
 });
  }
 })
