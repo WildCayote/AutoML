@@ -19,7 +19,7 @@ export default function DashboardLayout({
           <DashboardHeader />
           <div className="flex-1 overflow-auto">{children}</div>
         </div>
-        <ChatButton />
+        {/* <ChatButton /> */}
       </div>
     </ProjectsProvider>
   )

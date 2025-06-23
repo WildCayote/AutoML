@@ -20,7 +20,7 @@ interface ProjectHeaderProps {
   projectId: string
 }
 
-export function ProjectHeader({ projectId }: ProjectHeaderProps) {
+export function ProjectHeader({ projectId }: ProjectHeaderProps | any) {
   const pathname = usePathname()
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -91,9 +91,9 @@ export function ProjectHeader({ projectId }: ProjectHeaderProps) {
     }
   }
 
-  if (!project) {
-    return null
-  }
+  // if (!project) {
+  //   return null
+  // }
 
   // Get the current section from the pathname
   const section = pathname.split("/").slice(-2, -1)[0] || "data"
@@ -103,8 +103,8 @@ export function ProjectHeader({ projectId }: ProjectHeaderProps) {
     { name: "EDA", path: "eda" },
     { name: "Data Prep", path: "data-prep" },
     { name: "Model Training", path: "model-training" },
-    { name: "Deploy & Test", path: "deploy-test" },
-    { name: "Predictions", path: "predictions" },
+    // { name: "Deploy & Test", path: "deploy-test" },
+    // { name: "Predictions", path: "predictions" },
     { name: "Reports", path: "reports" },
   ]
   useEffect(() => {
@@ -124,7 +124,9 @@ export function ProjectHeader({ projectId }: ProjectHeaderProps) {
             })
     }
 }, [access_token, dispatch, router, authError]);
-
+  if (!project) {
+    return null;
+  }
   return (
     <div className="border-b">
       <div className="flex items-center justify-between p-4">

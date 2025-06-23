@@ -56,7 +56,7 @@ export function AuthForm({
   showRememberMe = mode === "signin",
   showForgotPassword = mode === "signin",
   submitLabel = mode === "signin" ? "Sign in" : "Sign up",
-  showGoogleAuth = true,
+  showGoogleAuth = false,
   googleAuthLabel = `${mode === "signin" ? "Sign in" : "Sign up"} with Google`,
   alternateActionText = mode === "signin" ? "Don't have an account?" : "Already have an account?",
   alternateActionLink = mode === "signin" ? "/signup" : "/",

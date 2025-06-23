@@ -130,6 +130,205 @@ export default function ModelTrainingCard({ params }: { params: Promise<PagePara
       })
   };
 
+
+  const hasCompletedModel = trainingData.data?.models?.length > 0;
+  const hasError = !!trainingData.error;
+  const isStartButtonDisabled = isLoading || isFetchingDataset || !datasetId || hasCompletedModel;
+
+  const renderClassificationReport = (report: Record<string, any>) => {
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Class</th>
+              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precision</th>
+              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recall</th>
+              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">F1-Score</th>
+              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Support</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(report).map(([key, value]) => {
+              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                return (
+                  <tr key={key} className="border-b last:border-b-0 hover:bg-gray-50">
+                    <td className="py-2 px-4 text-sm font-medium text-gray-900">{key === "accuracy" ? "Accuracy" : 
+                       key === "macro avg" ? "Macro Avg" : 
+                       key === "weighted avg" ? "Weighted Avg" : key}</td>
+                    <td className="py-2 px-4 text-sm text-gray-700">{value.precision?.toFixed(4) || '-'}</td>
+                    <td className="py-2 px-4 text-sm text-gray-700">{value.recall?.toFixed(4) || '-'}</td>
+                    <td className="py-2 px-4 text-sm text-gray-700">{value['f1-score']?.toFixed(4) || '-'}</td>
+                    <td className="py-2 px-4 text-sm text-gray-700">{value.support || '-'}</td>
+                  </tr>
+                );
+              }
+              return null;
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderContent = () => {
+    if (isFetchingDataset) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
+          <div className="animate-pulse rounded-full bg-gray-200 h-10 w-10 mb-4" />
+          <p className="text-sm text-gray-500">Loading dataset information...</p>
+        </div>
+      );
+    } else if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4" />
+          <p className="text-sm font-medium text-gray-700 mb-1">Training in progress</p>
+          <p className="text-xs text-gray-500">This may take several minutes</p>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+            <div className="bg-blue-600 h-2.5 rounded-full animate-pulse" style={{ width: '45%' }}></div>
+          </div>
+        </div>
+      );
+    } else if (hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-red-200 rounded-lg bg-red-50">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-100 text-red-600 mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <p className="text-sm text-red-600 mb-4 text-center">{trainingData.error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={startTraining}
+            disabled={isLoading || isFetchingDataset}
+            className="border-red-200 text-red-600 hover:bg-red-50"
+          >
+            <PlayIcon className="h-4 w-4 mr-2" />
+            Retry Training
+          </Button>
+        </div>
+      );
+    } else if (hasCompletedModel) {
+      const bestModel = trainingData.data?.models?.[0];
+      const bestModelInfo = bestModel?.training_metadata?.best_model_info;
+      const allModelsPerformance = bestModel?.training_metadata?.all_models_performance || [];
+      const datasetInfo = trainingData.data?.dataset;
+      const hyperParameters = bestModel?.modelHyperParameters;
+      const modelPerformance = bestModel?.modelPerformances;
+
+  return (
+  <div className="space-y-8">
+    {/* Dataset Information */}
+    <div className="bg-white shadow rounded-md p-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Dataset Information</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+        <div>
+          <p className="font-medium text-gray-600">Target Column</p>
+          <p>{datasetInfo?.targetColumnName || 'N/A'}</p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-600">Project ID</p>
+          <p className="break-all">{datasetInfo?.projectId || 'N/A'}</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Best Model Information */}
+    <div className="bg-white shadow rounded-md p-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Best Model</h3>
+      {bestModel ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-800">
+          <div className="bg-gray-50 border p-4 rounded">
+            <p className="text-gray-600 text-xs">Model Name</p>
+            <p className="font-semibold text-blue-700">{bestModel.name}</p>
+          </div>
+          <div className="bg-gray-50 border p-4 rounded">
+            <p className="text-gray-600 text-xs">Model UUID</p>
+            <p className="break-all">{bestModel.id}</p>
+          </div>
+          <div className="bg-gray-50 border p-4 rounded">
+            <p className="text-gray-600 text-xs">Training Type</p>
+            <p>{bestModel.trainingType}</p>
+          </div>
+          <div className="md:col-span-2 lg:col-span-3 bg-gray-50 border p-4 rounded">
+            <p className="text-gray-600 text-xs">Description</p>
+            <p>{bestModel.description}</p>
+          </div>
+          <div className="bg-gray-50 border p-4 rounded">
+            <p className="text-gray-600 text-xs">Model File</p>
+            <a
+              href={bestModel.model}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              Download Model
+            </a>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">No best model found.</p>
+      )}
+    </div>
+
+    {/* Hyperparameters */}
+    <div className="bg-white shadow rounded-md p-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Model Hyperparameters</h3>
+      {hyperParameters?.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm">
+          {hyperParameters.map(param => (
+            <div key={param.id} className="bg-gray-50 p-3 rounded border">
+              <p className="text-gray-600 font-medium">{param.metricName}</p>
+              <p className="text-gray-800">{param.metricValue}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">No hyperparameters available.</p>
+      )}
+    </div>
+
+    {/* Model Performance */}
+    <div className="bg-white shadow rounded-md p-6">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Model Performance</h3>
+      {modelPerformance?.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm">
+          {modelPerformance.map(metric => (
+            <div key={metric.id} className="bg-gray-50 p-3 rounded border">
+              <p className="text-gray-600 font-medium">{metric.metricName}</p>
+              <p className="text-gray-800">
+                {(() => {
+                  const val = Number(metric.metricValue);
+                  if (!isNaN(val) && val >= 0 && val <= 1) return `${(val * 100).toFixed(2)}%`;
+                  return metric.metricValue;
+                })()}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">No performance metrics available.</p>
+      )}
+    </div>
+  </div>
+);
+
+
+    } else {
+      return (
+        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
+          <Brain className="h-10 w-10 text-gray-300 mb-3" />
+          <p className="text-sm text-gray-500 text-center mb-4">
+            No model training results available
+          </p>
+        </div>
+      );
+    }
+  };
+
   const saveToLocalStorage = useCallback((data: TrainingState) => {
     if (!storageKey || !data.data?.models?.length) return;
     try {
@@ -252,8 +451,7 @@ export default function ModelTrainingCard({ params }: { params: Promise<PagePara
       setIsLoading(false);
     }
   }, [datasetId, startPolling, stopPolling, clearLocalStorage]);
-
-  useEffect(() => {
+    useEffect(() => {
     if (!projectId) return;
 
     const fetchId = async () => {
@@ -296,217 +494,10 @@ export default function ModelTrainingCard({ params }: { params: Promise<PagePara
     };
   }, [stopPolling]);
 
-  const hasCompletedModel = trainingData.data?.models?.length > 0;
-  const hasError = !!trainingData.error;
-  const isStartButtonDisabled = isLoading || isFetchingDataset || !datasetId || hasCompletedModel;
-
-  const renderClassificationReport = (report: Record<string, any>) => {
-    return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Class</th>
-              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precision</th>
-              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recall</th>
-              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">F1-Score</th>
-              <th className="py-2 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Support</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(report).map(([key, value]) => {
-              if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                return (
-                  <tr key={key} className="border-b last:border-b-0 hover:bg-gray-50">
-                    <td className="py-2 px-4 text-sm font-medium text-gray-900">{key === "accuracy" ? "Accuracy" : 
-                       key === "macro avg" ? "Macro Avg" : 
-                       key === "weighted avg" ? "Weighted Avg" : key}</td>
-                    <td className="py-2 px-4 text-sm text-gray-700">{value.precision?.toFixed(4) || '-'}</td>
-                    <td className="py-2 px-4 text-sm text-gray-700">{value.recall?.toFixed(4) || '-'}</td>
-                    <td className="py-2 px-4 text-sm text-gray-700">{value['f1-score']?.toFixed(4) || '-'}</td>
-                    <td className="py-2 px-4 text-sm text-gray-700">{value.support || '-'}</td>
-                  </tr>
-                );
-              }
-              return null;
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  const renderContent = () => {
-    if (isFetchingDataset) {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-          <div className="animate-pulse rounded-full bg-gray-200 h-10 w-10 mb-4" />
-          <p className="text-sm text-gray-500">Loading dataset information...</p>
-        </div>
-      );
-    } else if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4" />
-          <p className="text-sm font-medium text-gray-700 mb-1">Training in progress</p>
-          <p className="text-xs text-gray-500">This may take several minutes</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-            <div className="bg-blue-600 h-2.5 rounded-full animate-pulse" style={{ width: '45%' }}></div>
-          </div>
-        </div>
-      );
-    } else if (hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-red-200 rounded-lg bg-red-50">
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-100 text-red-600 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <p className="text-sm text-red-600 mb-4 text-center">{trainingData.error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={startTraining}
-            disabled={isLoading || isFetchingDataset}
-            className="border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <PlayIcon className="h-4 w-4 mr-2" />
-            Retry Training
-          </Button>
-        </div>
-      );
-    } else if (hasCompletedModel) {
-      const bestModel = trainingData.data?.models?.[0];
-      const bestModelInfo = bestModel?.training_metadata?.best_model_info;
-      const allModelsPerformance = bestModel?.training_metadata?.all_models_performance || [];
-      const datasetInfo = trainingData.data?.dataset;
-
-      return (
-        <div className="space-y-6">
-          {/* Dataset Information */}
-          <div className="bg-gray-50 p-4 rounded-md">
-            <h3 className="text-md font-semibold mb-3 text-gray-800">Dataset Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Target Column</p>
-                <p className="text-sm text-gray-800">{datasetInfo?.targetColumnName || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Project ID</p>
-                <p className="text-sm text-gray-800 break-words">{datasetInfo?.projectId || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Best Model Information */}
-          <div className="bg-gray-50 p-4 rounded-md">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-md font-semibold text-gray-800">Best Performing Model</h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {bestModelInfo?.model_name || 'N/A'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white p-3 rounded border border-gray-200">
-                <p className="text-sm font-medium text-gray-600 mb-1">Accuracy</p>
-                <p className="text-lg font-semibold text-blue-600">
-                  {bestModelInfo?.test_set_performance?.accuracy ? 
-                    `${(bestModelInfo.test_set_performance.accuracy * 100).toFixed(2)}%` : 'N/A'}
-                </p>
-              </div>
-              <div className="bg-white p-3 rounded border border-gray-200">
-                <p className="text-sm font-medium text-gray-600 mb-1">Weighted F1 Score</p>
-                <p className="text-lg font-semibold text-blue-600">
-                  {bestModelInfo?.test_set_performance?.weighted_f1_score ? 
-                    `${(bestModelInfo.test_set_performance.weighted_f1_score * 100).toFixed(2)}%` : 'N/A'}
-                </p>
-              </div>
-              <div className="bg-white p-3 rounded border border-gray-200">
-                <p className="text-sm font-medium text-gray-600 mb-1">Model UUID</p>
-                <p className="text-sm text-gray-800 truncate">{bestModelInfo?.model_uuid || 'N/A'}</p>
-              </div>
-            </div>
-
-            {/* Hyperparameters */}
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold mb-2 text-gray-700">Best Hyperparameters</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {bestModelInfo?.best_hyperparameters && Object.entries(bestModelInfo.best_hyperparameters).map(([key, value]) => (
-                  <div key={key} className="bg-white p-2 rounded border border-gray-200">
-                    <p className="text-xs font-medium text-gray-600">{key}</p>
-                    <p className="text-sm text-gray-800">{String(value)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Classification Report */}
-            {bestModelInfo?.test_set_performance?.full_classification_report && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-gray-700">Classification Report</h4>
-                {renderClassificationReport(bestModelInfo.test_set_performance.full_classification_report)}
-              </div>
-            )}
-          </div>
-
-          {/* All Models Performance */}
-          <div className="bg-gray-50 p-4 rounded-md">
-            <h3 className="text-md font-semibold mb-3 text-gray-800">All Models Performance</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allModelsPerformance.map((model) => (
-                <div key={model.model_name} className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-800">{model.model_name}</h4>
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      CV F1: {(model.cross_validation_f1_score * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div>
-                      <p className="text-xs text-gray-500">Accuracy</p>
-                      <p className="text-sm font-medium">{(model.test_set_performance.accuracy * 100).toFixed(1)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Weighted F1</p>
-                      <p className="text-sm font-medium">{(model.test_set_performance.weighted_f1_score * 100).toFixed(1)}%</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-2 mt-2">
-                    <p className="text-xs text-gray-500 mb-1">Hyperparameters</p>
-                    <ul className="text-xs text-gray-700 space-y-1">
-                      {Object.entries(model.best_hyperparameters).map(([key, value]) => (
-                        <li key={key} className="flex justify-between">
-                          <span className="font-medium">{key}:</span> 
-                          <span>{String(value)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-          <Brain className="h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-sm text-gray-500 text-center mb-4">
-            No model training results available
-          </p>
-        </div>
-      );
-    }
-  };
-
   return (
     <>
-    {/* <ProjectHeader projectId={project?.id ?? " "} /> */}
+    <ProjectHeader projectId={project?.id ?? " "} />
+    <div className="p-8">
     <Card className="mb-8">
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -533,6 +524,7 @@ export default function ModelTrainingCard({ params }: { params: Promise<PagePara
         {renderContent()}
       </CardContent>
     </Card>
+    </div>
     </>
   );
 }

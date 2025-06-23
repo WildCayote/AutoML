@@ -26,9 +26,9 @@ export interface DataUploaderRef {
 enum TaskType {
   CLASSIFICATION = "CLASSIFICATION",
   REGRESSION = "REGRESSION",
-  CLUSTERING = "CLUSTERING",
-  ANOMALY_DETECTION = "ANOMALY_DETECTION",
-  TIME_SERIES_FORECASTING = "TIME_SERIES_FORECASTING"
+  // CLUSTERING = "CLUSTERING",
+  // ANOMALY_DETECTION = "ANOMALY_DETECTION",
+  // TIME_SERIES_FORECASTING = "TIME_SERIES_FORECASTING"
 }
 
 function DataUploader({ projectId }: DataUploaderProps, ref: React.Ref<DataUploaderRef>) {
@@ -47,6 +47,8 @@ function DataUploader({ projectId }: DataUploaderProps, ref: React.Ref<DataUploa
   const [targetColumn, setTargetColumn] = useState<string | null>(null);
   const [tempDescription, setTempDescription] = useState('');
   const [isDatasetUploaded, setIsDatasetUploaded] = useState(false);
+  const [alertPopup, setAlertPopup] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   const dispatch = useAppDispatch();
   const { datasets, deleted, status, hasLocalFile } = useAppSelector((state) => state.data);
@@ -105,9 +107,13 @@ function DataUploader({ projectId }: DataUploaderProps, ref: React.Ref<DataUploa
 
       // Then start profiling
       await dispatch(startProfiling(datasets[0].id)).unwrap();
-      alert("Target column specified and profiling started successfully!");
+      setAlertPopup(true)
+      setAlertMessage("Target column specified and profiling started successfully!")
+      // alert("Target column specified and profiling started successfully!");
     } catch (error) {
-      alert("Failed to specify target column or start profiling");
+      setAlertPopup(true)
+      setAlertMessage("Failed to specify target column or start profiling!")
+      // alert("Failed to specify target column or start profiling");
       console.error("Profiling error:", error);
     }
   };
@@ -538,6 +544,10 @@ function DataUploader({ projectId }: DataUploaderProps, ref: React.Ref<DataUploa
           </div>
         </div>
       )}
+      {alertPopup && <div>
+          <p>{alertMessage}</p>
+          <button type='button' onClick={() => {setAlertPopup(false)}}>OK</button>
+        </div>}
     </div>
   );
 }

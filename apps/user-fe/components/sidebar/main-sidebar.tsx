@@ -45,20 +45,20 @@ const navItems = [
     description: "Train and evaluate models",
     projectSpecific: true,
   },
-  {
-    name: "Deploy & Test",
-    icon: Rocket,
-    path: "deploy-test",
-    description: "Deploy and test your models",
-    projectSpecific: true,
-  },
-  {
-    name: "Predictions",
-    icon: LineChart,
-    path: "predictions",
-    description: "Make predictions with your models",
-    projectSpecific: true,
-  },
+  // {
+  //   name: "Deploy & Test",
+  //   icon: Rocket,
+  //   path: "deploy-test",
+  //   description: "Deploy and test your models",
+  //   projectSpecific: true,
+  // },
+  // {
+  //   name: "Predictions",
+  //   icon: LineChart,
+  //   path: "predictions",
+  //   description: "Make predictions with your models",
+  //   projectSpecific: true,
+  // },
   {
     name: "Reports",
     icon: FileBarChart,
@@ -66,14 +66,14 @@ const navItems = [
     description: "View reports and insights",
     projectSpecific: true,
   },
-  {
-    name: "Settings",
-    icon: Settings,
-    path: "settings",
-    description: "Configure your workspace",
-    projectSpecific: false,
-    fullPath: "/settings",
-  },
+  // {
+  //   name: "Settings",
+  //   icon: Settings,
+  //   path: "settings",
+  //   description: "Configure your workspace",
+  //   projectSpecific: false,
+  //   fullPath: "/settings",
+  // },
 ]
 
 export function MainSidebar() {
