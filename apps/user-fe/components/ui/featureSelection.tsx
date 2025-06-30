@@ -8,8 +8,8 @@ import { useAppDispatch } from "@/libb/hooks";
 import { fetchDatasetIdByProjectId } from "@/libb/features/data/dataActions";
 import axios from "axios";
 
-const API_BASE_URL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001";
-const POLLING_INTERVAL = 10000; // 10 seconds
+const API_BASE_URL = "http://ec2-3-239-98-228.compute-1.amazonaws.com:3001";
+const POLLING_INTERVAL = 10000;
 const STORAGE_KEY_PREFIX = "featureSelection_";
 
 interface FeatureSelectionResult {
@@ -25,30 +25,24 @@ export function FeatureSelectionCard({ projectId }: { projectId: string | null }
   const [error, setError] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Generate storage key based on datasetId
   const storageKey = datasetId ? `${STORAGE_KEY_PREFIX}${datasetId}` : null;
 
-  console.log(`[RENDER] projectId: ${projectId}, datasetId: ${datasetId}, status: ${results?.featureSelectionStatus}, loading: ${isLoading}, error: ${error}`);
-
-  // --- Persistence Functions ---
   const saveToLocalStorage = useCallback((data: FeatureSelectionResult) => {
     if (!storageKey) return;
     try {
-      console.log(`[STORAGE] Saving to localStorage with key: ${storageKey}`);
       localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (e) {
-      console.error("[STORAGE] Failed to save to localStorage", e);
+      console.error("Failed to save to localStorage", e);
     }
   }, [storageKey]);
 
   const loadFromLocalStorage = useCallback(() => {
     if (!storageKey) return null;
     try {
-      console.log(`[STORAGE] Loading from localStorage with key: ${storageKey}`);
       const storedData = localStorage.getItem(storageKey);
       return storedData ? JSON.parse(storedData) as FeatureSelectionResult : null;
     } catch (e) {
-      console.error("[STORAGE] Failed to load from localStorage", e);
+      console.error("Failed to load from localStorage", e);
       return null;
     }
   }, [storageKey]);
@@ -56,180 +50,146 @@ export function FeatureSelectionCard({ projectId }: { projectId: string | null }
   const clearLocalStorage = useCallback(() => {
     if (!storageKey) return;
     try {
-      console.log(`[STORAGE] Clearing localStorage for key: ${storageKey}`);
       localStorage.removeItem(storageKey);
     } catch (e) {
-      console.error("[STORAGE] Failed to clear localStorage", e);
+      console.error("Failed to clear localStorage", e);
     }
   }, [storageKey]);
 
-  // --- Polling Control ---
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
-      console.log("[POLLING] Stopping polling interval");
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
   }, []);
 
-  // --- API Operations ---
   const fetchFeatureSelectionStatus = useCallback(async () => {
-    console.log("[STATUS] Fetching feature selection status...");
     if (!datasetId) {
-      const errMsg = "[STATUS] Cannot fetch - no datasetId available";
-      console.error(errMsg);
-      setError(errMsg);
       stopPolling();
-      setIsLoading(false);
       return;
     }
 
     try {
-      console.log(`[API] GET ${API_BASE_URL}/datasets/${datasetId}/feature-selection`);
       const response = await axios.get<FeatureSelectionResult>(
         `${API_BASE_URL}/datasets/${datasetId}/feature-selection`
       );
-      
-      console.log(`[STATUS] Received status: ${response.data.featureSelectionStatus}`);
+
+      const status = response.data.featureSelectionStatus;
       setResults(response.data);
       saveToLocalStorage(response.data);
 
-      switch(response.data.featureSelectionStatus) {
-        case "COMPLETED":
-          console.log("[STATUS] Process completed successfully!");
-          stopPolling();
-          setIsLoading(false);
-          break;
-        case "FAILED":
-          console.error("[STATUS] Process failed");
-          stopPolling();
-          setIsLoading(false);
-          setError("Feature selection process failed");
-          break;
-        case "IN_PROGRESS":
-          console.log("[STATUS] Process still in progress...");
-          break;
-        default:
-          console.log("[STATUS] Process not started yet");
+      if (status === "COMPLETED" || status === "FAILED") {
+        stopPolling();
+        setIsLoading(false);
+        if (status === "FAILED") setError("Feature selection failed.");
       }
     } catch (err) {
-      const errMsg = `[ERROR] Status fetch failed: ${err.message}`;
-      console.error(errMsg, err);
+      console.error("Status fetch failed", err);
       stopPolling();
-      setIsLoading(false);
       setError("Failed to fetch feature selection status");
+      setIsLoading(false);
     }
   }, [datasetId, stopPolling, saveToLocalStorage]);
 
   const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      console.log("[POLLING] Polling already active - skipping");
-      return;
-    }
-    console.log(`[POLLING] Starting polling every ${POLLING_INTERVAL/1000}s`);
+    if (pollingIntervalRef.current) return;
     pollingIntervalRef.current = setInterval(fetchFeatureSelectionStatus, POLLING_INTERVAL);
   }, [fetchFeatureSelectionStatus]);
 
   const startFeatureSelection = useCallback(async () => {
-    console.log("[ACTION] Starting feature selection process...");
     if (!datasetId) {
-      const errMsg = "[ERROR] Cannot start - no datasetId";
-      console.error(errMsg);
-      setError(errMsg);
+      setError("No datasetId");
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setResults(null);
-    clearLocalStorage();
     stopPolling();
 
     try {
-      console.log(`[API] PATCH ${API_BASE_URL}/datasets/${datasetId}/start-feature-selection`);
-      await axios.patch(`${API_BASE_URL}/datasets/${datasetId}/start-feature-selection`);
-      console.log("[ACTION] Process started successfully");
-      
-      // Initial immediate status check
-      console.log("[STATUS] Performing initial status check");
       const statusResponse = await axios.get<FeatureSelectionResult>(
         `${API_BASE_URL}/datasets/${datasetId}/feature-selection`
       );
-      
-      console.log(`[STATUS] Received status: ${statusResponse.data.featureSelectionStatus}`);
-      setResults(statusResponse.data);
-      saveToLocalStorage(statusResponse.data);
 
-      // Start polling based on the fresh response
-      if (statusResponse.data.featureSelectionStatus === "IN_PROGRESS") {
-        console.log("[POLLING] Starting polling for IN_PROGRESS status");
-        startPolling();
+      const currentStatus = statusResponse.data.featureSelectionStatus;
+
+      if (currentStatus === "COMPLETED") {
+        const cached = loadFromLocalStorage();
+        if (cached) {
+          setResults(cached);
+        } else {
+          setResults(statusResponse.data);
+          saveToLocalStorage(statusResponse.data);
+        }
+        setIsLoading(false);
+        return;
       }
+
+      if (currentStatus === "IN_PROGRESS") {
+        setResults(statusResponse.data);
+        saveToLocalStorage(statusResponse.data);
+        startPolling();
+        return;
+      }
+
+      // Not started or failed — start new process
+      clearLocalStorage();
+      await axios.patch(`${API_BASE_URL}/datasets/${datasetId}/start-feature-selection`);
+      const freshStatus = await axios.get<FeatureSelectionResult>(
+        `${API_BASE_URL}/datasets/${datasetId}/feature-selection`
+      );
+
+      setResults(freshStatus.data);
+      saveToLocalStorage(freshStatus.data);
+
+      if (freshStatus.data.featureSelectionStatus === "IN_PROGRESS") {
+        startPolling();
+      } else if (freshStatus.data.featureSelectionStatus === "FAILED") {
+        setError("Feature selection process failed");
+      }
+
     } catch (err) {
-      const errMsg = `[ERROR] Process start failed: ${err.message}`;
-      console.error(errMsg, err);
+      console.error("Start failed", err);
       setError("Failed to start feature selection");
+    } finally {
       setIsLoading(false);
     }
-  }, [datasetId, startPolling, stopPolling, clearLocalStorage, saveToLocalStorage]);
+  }, [datasetId, loadFromLocalStorage, clearLocalStorage, saveToLocalStorage, startPolling, stopPolling]);
 
-  // --- Dataset ID Management ---
   useEffect(() => {
-    console.log("[EFFECT] Checking for projectId...");
-    if (!projectId) {
-      console.log("[EFFECT] No projectId - skipping datasetId fetch");
-      return;
-    }
+    if (!projectId) return;
 
     const fetchId = async () => {
       try {
-        console.log(`[DATASET] Fetching datasetId for project: ${projectId}`);
         const id = await dispatch(fetchDatasetIdByProjectId(projectId)).unwrap();
-        if (id) {
-          console.log(`[DATASET] Received datasetId: ${id}`);
-          setDatasetId(id);
-        } else {
-          console.error("[DATASET] No datasetId returned");
-        }
+        if (id) setDatasetId(id);
       } catch (err) {
-        console.error(`[ERROR] Dataset ID fetch failed: ${err.message}`);
+        console.error("Failed to fetch datasetId", err);
       }
     };
-    
+
     fetchId();
   }, [projectId, dispatch]);
 
-  // --- Load Persisted Data ---
   useEffect(() => {
     if (!datasetId) return;
 
-    const storedData = loadFromLocalStorage();
-    if (storedData) {
-      console.log(`[STORAGE] Loaded stored data:`, storedData);
-      setResults(storedData);
-
-      if (storedData.featureSelectionStatus === "IN_PROGRESS") {
-        console.log("[STORAGE] Resuming polling for IN_PROGRESS status");
+    const stored = loadFromLocalStorage();
+    if (stored) {
+      setResults(stored);
+      if (stored.featureSelectionStatus === "IN_PROGRESS") {
         setIsLoading(true);
         startPolling();
-      } else if (storedData.featureSelectionStatus === "COMPLETED") {
-        console.log("[STORAGE] Found completed process");
-      } else if (storedData.featureSelectionStatus === "FAILED") {
-        console.log("[STORAGE] Found failed process");
+      } else if (stored.featureSelectionStatus === "FAILED") {
         setError("Previous feature selection process failed");
       }
     }
   }, [datasetId, loadFromLocalStorage, startPolling]);
 
-  // --- Cleanup ---
   useEffect(() => {
-    return () => {
-      console.log("[CLEANUP] Component unmounting - stopping polling");
-      stopPolling();
-    };
+    return () => stopPolling();
   }, [stopPolling]);
 
-  // --- UI Rendering ---
   return (
     <Card className="mb-8">
       <CardHeader>

@@ -10,7 +10,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { ProjectHeader } from "@/components/dashboard/project-header";
 
-const API_BASE_URL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001";
+const API_BASE_URL = "http://ec2-3-239-98-228.compute-1.amazonaws.com:3001";
 const POLLING_INTERVAL = 30000; // 30 seconds
 const STORAGE_KEY_PREFIX = "modelTraining_";
 const MAX_RETRIES = 3;

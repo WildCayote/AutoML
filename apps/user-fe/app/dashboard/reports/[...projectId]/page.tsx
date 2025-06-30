@@ -49,7 +49,7 @@ export default function ReportsPage({ params }: { params: Promise<PageParams> })
   const [error, setError] = useState<string | null>(null);
   const [datasetId, setDatasetId] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const API_BASE_URL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001"
+  const API_BASE_URL = "http://ec2-3-239-98-228.compute-1.amazonaws.com:3001"
   // Fetch report data
   const fetchReportData = useCallback(async (datasetId: string) => {
     try {

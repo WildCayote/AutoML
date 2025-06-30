@@ -2,7 +2,7 @@ import  {createAppAsyncThunk} from "@/libb/hooks";
 import { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import { Project } from "./projectSlice";
 const axios = require("axios").default;
-const backendURL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001"
+const backendURL = "http://ec2-3-239-98-228.compute-1.amazonaws.com:3001"
 const getConfig = (): AxiosRequestConfig => ({
   headers: {
     'Content-Type': 'application/json',

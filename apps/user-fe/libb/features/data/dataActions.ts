@@ -4,7 +4,7 @@ import axios from "axios";
 import { Dataset, EDAReport } from "./datasetSlice";
 // import { FaLessThan } from "react-icons/fa";
 
-const backendURL = "http://ec2-34-239-157-156.compute-1.amazonaws.com:3001";
+const backendURL = "http://ec2-3-239-98-228.compute-1.amazonaws.com:3001";
 export const createDataset = createAppAsyncThunk<
   Dataset,
   { 
@@ -122,6 +122,14 @@ export const startProfiling = createAppAsyncThunk<
           Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("access_token") : ""}`,
         }
       };
+
+      const EDAresponse = await axios.get(
+        `${backendURL}/datasets/${datasetId}/eda`,
+        config
+      );
+      if (EDAresponse.data.profilingStatus == "COMPLETED" || EDAresponse.data.profilingStatus == "IN_PROGRESS"){
+        return
+      }
 
       const response = await axios.patch(
         `${backendURL}/datasets/${datasetId}/start-profiling`,
@@ -296,6 +304,15 @@ export const startFeatureEngineering = createAppAsyncThunk<
         }
       };
 
+      const FeatureEngineeringResponse = await axios.get(
+        `${backendURL}/datasets/${datasetId}/feature-engineering`,
+        config
+      );
+      console.log(FeatureEngineeringResponse)
+      if (FeatureEngineeringResponse.data.featureEngineeringStatus == "COMPLETED" || FeatureEngineeringResponse.data.featureEngineeringStatus == "IN_PROGRESS"){
+        return
+      }
+
       const response = await axios.patch(
         `${backendURL}/datasets/${datasetId}/start-feature-engineering`,
         {},
@@ -362,6 +379,14 @@ export const startFeatureSelection = createAppAsyncThunk<
           Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("access_token") : ""}`,
         }
       };
+
+      const FeatureSelectionResponse = await axios.get(
+        `${backendURL}/datasets/${datasetId}/feature-selection`,
+        config
+      );
+      if (FeatureSelectionResponse.data.featureSelectionStatus == "COMPLETED" || FeatureSelectionResponse.data.featureSelectionStatus == "IN_PROGRESS"){
+        return
+      }
 
       const response = await axios.patch(
         `${backendURL}/datasets/${datasetId}/start-feature-selection`,

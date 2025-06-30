@@ -29,19 +29,13 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
   const unwrappedParams = use(params);
   const projectId = unwrappedParams.projectId.join("/");
   const initialized = useRef(false);
-  
-  // State for cached EDA
+
   const [cachedEDA, setCachedEDA] = useState<EDACache | null>(null);
-  
-  // Use the custom hook to fetch dataset and EDA
   const { dataset, isLoading, error, isPolling, fetchData, stopPolling } = fetchEDA(projectId);
-  
-  // Get project data
   const { projects, status: projectStatus, error: projectError } = useAppSelector((state) => state.project);
   const { error: authError } = useAppSelector((state) => state.auth);
   const project = projects.find((p) => p.id === projectId);
 
-  // Load cached EDA data
   const loadCachedEDA = useCallback(() => {
     if (typeof window !== 'undefined') {
       const cachedData = localStorage.getItem(`eda-${projectId}`);
@@ -57,24 +51,20 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
     return false;
   }, [projectId]);
 
-  // Cache new EDA data
   const cacheEDA = useCallback((url: string) => {
     const edaCache: EDACache = {
       url,
       timestamp: Date.now(),
       projectId
     };
-    
     localStorage.setItem(`eda-${projectId}`, JSON.stringify(edaCache));
     setCachedEDA(edaCache);
   }, [projectId]);
 
-  // Check for cached EDA on initial load
   useEffect(() => {
     loadCachedEDA();
   }, [loadCachedEDA]);
 
-  // Initialize polling or use cached data
   useEffect(() => {
     if (!initialized.current && projectId) {
       if (!loadCachedEDA()) {
@@ -84,32 +74,34 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
     }
   }, [projectId, fetchData, loadCachedEDA]);
 
-  // Cache new EDA data when it arrives
   useEffect(() => {
     if (dataset?.edaReport?.url && !isLoading && !error) {
       cacheEDA(dataset.edaReport.url);
     }
   }, [dataset?.edaReport?.url, isLoading, error, cacheEDA]);
 
-  // Handle auth errors
   useEffect(() => {
     if (projectError === "Unauthorized") {
       dispatch(refresh());
     }
   }, [projectError, dispatch]);
 
-  // Clean up polling on unmount
   useEffect(() => {
     return () => {
       stopPolling();
     };
   }, [stopPolling]);
 
-  // Handle retry
+  useEffect(() => {
+    if (dataset?.edaReport?.url && isPolling) {
+      stopPolling();
+    }
+  }, [dataset?.edaReport?.url, isPolling, stopPolling]);
+
   const handleRetry = useCallback(() => {
     localStorage.removeItem(`eda-${projectId}`);
     setCachedEDA(null);
-    
+
     dispatch(fetchDatasetIdByProjectId(projectId))
       .unwrap()
       .then((datasetId) => {
@@ -117,7 +109,6 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
       });
   }, [projectId, dispatch, fetchData]);
 
-  // Clear cache manually
   const handleClearCache = useCallback(() => {
     localStorage.removeItem(`eda-${projectId}`);
     setCachedEDA(null);
@@ -128,7 +119,6 @@ export default function EDAPage({ params }: { params: Promise<PageParams> }) {
     return <div className="p-8">Project not found</div>;
   }
 
-  // Get the EDA visualization data - prefer fresh data over cached
   const edaViz = dataset?.edaReport?.url || cachedEDA?.url;
 
   return (
