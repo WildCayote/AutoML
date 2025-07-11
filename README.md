@@ -83,7 +83,7 @@ then enter your password from `{POSTGRES_PASSWORD}` in your `.env` file.
 
 ## Documentation
 
-The full documentation for the AutoML platform, including setup guides, technical documentation, and API references, is available [here](https://wildcayote.github.io/AutoML/).
+The full documentation for the AutoML platform, including setup guides, technical documentation, and API references, is available [here](https://wildcayote.github.io/AutoML/). Not fully complete yet!
 
 ## License
 
