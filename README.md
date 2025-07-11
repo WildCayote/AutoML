@@ -87,7 +87,9 @@ The full documentation for the AutoML platform, including setup guides, technica
 
 ## License
 
-Copyright © 2024 AutoML Platform Team – Dawit Getahun Mengistu, Mariam Yohannes Gustavo, Metsakal Zeleke Eneyew, Naol Taye, Tinsae Shemalise Yared - All rights reserved.
+Copyright © 2025 AutoML Platform Team – All rights reserved.
+
+This codebase is not open source. Redistribution, modification, or commercial use is prohibited without explicit permission.
 
 ## Acknowledgements
 
